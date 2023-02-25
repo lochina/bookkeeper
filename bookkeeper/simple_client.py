@@ -9,7 +9,7 @@ from bookkeeper.repository.sqlite_repository import SQLiteRepository
 from bookkeeper.utils import read_tree
 
 
-cat_repo = SQLiteRepository[Category]('test.db', Test)
+cat_repo = SQLiteRepository[Category]('test.db', Category)
 exp_repo = MemoryRepository[Expense]()
 
 cats = '''
