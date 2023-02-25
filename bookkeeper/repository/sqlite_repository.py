@@ -19,6 +19,7 @@ class SQLiteRepository(AbstractRepository[T]):
         with sqlite3.connect(self.db_file) as con:
             cur = con.cursor()
             cur.execute('PRAGMA foreign_keys = ON')
+            cur.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name} ({names})') #creates a table if it doesn't exist
             cur.execute(
                 f'INSERT INTO {self.table_name} ({names}) VALUES ({p})',
                 values
@@ -30,7 +31,14 @@ class SQLiteRepository(AbstractRepository[T]):
 
     def get(self, pk: int) -> T | None:
         """ Получить объект по id """
-        pass
+        with sqlite3.connect(self.db_file) as con:
+            cur = con.cursor()
+            cur.execute('PRAGMA foreign_keys = ON')
+            cur.execute(f'SELECT * FROM {self.table_name} WHERE id = {pk}')
+            result = cur.fetchone()
+
+        con.close()
+        return result
 
     def get_all(self, where: dict[str, any] | None = None) -> list[T]:
         """
@@ -38,12 +46,35 @@ class SQLiteRepository(AbstractRepository[T]):
         where - условие в виде словаря {'название_поля': значение}
         если условие не задано (по умолчанию), вернуть все записи
         """
-        pass
+        with sqlite3.connect(self.db_file) as con:
+            cur = con.cursor()
+            cur.execute('PRAGMA foreign_keys = ON')
+            cur.execute(f'SELECT * FROM {self.table_name}')
+            result = cur.fetchall()
+
+        con.close()
+        return result
 
     def update(self, obj: T) -> None:
         """ Обновить данные об объекте. Объект должен содержать поле pk. """
-        pass
+        names = ', '.join(self.fields.keys())
+        p = ', '.join("?" * len(self.fields))
+        values = [getattr(obj, x) for x in self.fields]
+        with sqlite3.connect(self.db_file) as con:
+            cur = con.cursor()
+            cur.execute('PRAGMA foreign_keys = ON')
+            cur.execute(f'UPDATE {self.table_name} SET ({names}) VALUES ({p}) WHERE id = {obj.pk}', values)
+            result = cur.fetchone()
+
+        con.close()
+        return result
 
     def delete(self, pk: int) -> None:
         """ Удалить запись """
-        pass
+        with sqlite3.connect(self.db_file) as con:
+            cur = con.cursor()
+            cur.execute('PRAGMA foreign_keys = ON')
+            cur.execute(f'DELETE FROM {self.table_name} WHERE id = {pk}')
+
+        con.close()
+        return None
