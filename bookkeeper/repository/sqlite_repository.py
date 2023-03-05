@@ -57,7 +57,7 @@ class SQLiteRepository(AbstractRepository[T]):
             cur = con.cursor()
             cur.execute('PRAGMA foreign_keys = ON')
             cur.execute(f'SELECT * FROM {self.table_name}')
-            result = cur.fetchall()
+            result = [list(x) for x in cur.fetchall()]
 
         con.close()
         return result
