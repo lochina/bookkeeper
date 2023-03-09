@@ -1,7 +1,11 @@
 import sqlite3
 
 from inspect import get_annotations
+from typing import List, Any
+
 from bookkeeper.repository.abstract_repository import AbstractRepository, T
+from datetime import date
+from dataclasses import field
 
 
 class SQLiteRepository(AbstractRepository[T]):
@@ -12,6 +16,7 @@ class SQLiteRepository(AbstractRepository[T]):
         self.fields.pop('pk')
         self.create()
 
+#TODO: проверить, создается ли список категорий и таблица расходов без simple client
 
     def create(self) -> None:
         names = ', '.join(self.fields.keys())
@@ -47,7 +52,7 @@ class SQLiteRepository(AbstractRepository[T]):
         con.close()
         return result
 
-    def get_all(self, where: dict[str, any] | None = None) -> list[T]:
+    def get_all(self, where: dict[str, any] | None = None) -> list[list[Any]]:
         """
         Получить все записи по некоторому условию
         where - условие в виде словаря {'название_поля': значение}
@@ -56,10 +61,25 @@ class SQLiteRepository(AbstractRepository[T]):
         with sqlite3.connect(self.db_file) as con:
             cur = con.cursor()
             cur.execute('PRAGMA foreign_keys = ON')
-            cur.execute(f'SELECT * FROM {self.table_name}')
-            result = [list(x) for x in cur.fetchall()]
+            if type(where) == type(dict()):
+                column_name = list(where.keys())[0]
+                condition = list(where.values())[0]
+                if condition == 'today':
+                    cur.execute(f'SELECT * FROM {self.table_name} WHERE DATE({column_name}) = DATE()')
+                elif condition == 'week':
+                    params = ('now', '-7 days')
+                    cur.execute(f'SELECT * FROM {self.table_name} WHERE DATE({column_name}) > DATE(?, ?)', params)
+                elif condition == 'month':
+                    params = ('now', '-30 days')
+                    cur.execute(f'SELECT * FROM {self.table_name} WHERE DATE({column_name}) > DATE(?, ?)', params)
+                else:
+                    cur.execute(f'SELECT * FROM {self.table_name} WHERE {column_name} = {condition}')
+            else:
+                cur.execute(f'SELECT * FROM {self.table_name}')
+            result =  [list(x) for x in cur.fetchall()]#cur.fetchall()
 
         con.close()
+        print(result)
         return result
 
     def update(self, obj: T) -> None:
