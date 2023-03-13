@@ -6,12 +6,20 @@ from inspect import isgenerator
 import pytest
 
 from bookkeeper.models.category import Category
-from bookkeeper.repository.memory_repository import MemoryRepository
+#from bookkeeper.repository.memory_repository import MemoryRepository
+from bookkeeper.repository.sqlite_repository import SQLiteRepository
+
+
+DB_NAME = 'test_2.db'
+
+@pytest.fixture
+def custom_class():
+    return Category
 
 
 @pytest.fixture
-def repo():
-    return MemoryRepository()
+def repo(custom_class):
+    return SQLiteRepository(DB_NAME, custom_class)
 
 
 def test_create_object():
@@ -64,19 +72,19 @@ def test_get_all_parents(repo):
     assert [c.name for c in gen] == ['3', '2', '1', '0']
 
 
-def test_get_subcategories(repo: MemoryRepository[Category]):
+def test_get_subcategories(repo: SQLiteRepository[Category]):
     parent_pk = None
     for i in range(5):
         c = Category(str(i), parent=parent_pk)
         parent_pk = repo.add(c)
-    c = repo.get_all({'name': '0'})[0]
-    gen = c.get_subcategories(repo)
+    new = repo.get_all({'name': '0'})[0]
+    gen = new.get_subcategories(repo)
     assert isgenerator(gen)
     # using set because order doesn't matter
     assert {c.name for c in gen} == {'1', '2', '3', '4'}
 
 
-def test_get_subcategories_complicated(repo: MemoryRepository[Category]):
+def test_get_subcategories_complicated(repo: SQLiteRepository[Category]):
     root = Category('0')
     root_pk = repo.add(root)
     repo.add(Category('1', root_pk))
