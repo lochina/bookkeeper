@@ -1,19 +1,26 @@
-from datetime import datetime
+from datetime import date
 
 import pytest
 
-from bookkeeper.repository.memory_repository import MemoryRepository
+from bookkeeper.repository.sqlite_repository import SQLiteRepository
 from bookkeeper.models.expense import Expense
+
+DB_NAME = 'test.db'
+
+@pytest.fixture
+def custom_class():
+    return Expense
+
 
 
 @pytest.fixture
-def repo():
-    return MemoryRepository()
+def repo(custom_class):
+    return SQLiteRepository(DB_NAME, custom_class)
 
 
 def test_create_with_full_args_list():
-    e = Expense(amount=100, category=1, expense_date=datetime.now(),
-                added_date=datetime.now(), comment='test', pk=1)
+    e = Expense(amount=100, category=1, expense_date=date.today(),
+                added_date=date.today(), comment='test', pk=1)
     assert e.amount == 100
     assert e.category == 1
 
