@@ -2,7 +2,7 @@
 Описан класс, представляющий бюджет
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(slots=True)
